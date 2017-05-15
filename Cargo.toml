@@ -1,0 +1,6 @@
+[package]
+name = "tokio-raft"
+version = "0.1.0"
+authors = ["Ryan Thomas <ryan@ryant.org>"]
+
+[dependencies]

@@ -1,0 +1,27 @@
+Overview:
+
+- tokio-base impl to provide the building blocks for utilizing a raft impl.
+ - These will consist of a `core` compoenent that provides the actual implementation; and
+ - A client library that the followers can use to send RPCs to the leader
+- This split should allow requests to be sent to any node and processed on the leader.
+
+Components:
+
+- tokio-raft
+ - raft-client
+  - Manages connections from any node to leader & client RPC ID
+ - raft-core
+  - Raft implementation
+
+Plan:
+
+- Initial framework
+ - Determine RPC process and log representation
+  - Capnproto?
+ - Leader election & timeout
+  - Simple key-value log in-memory
+
+- Configuration changes
+
+- Snapshotting
+ - Disk persistance
