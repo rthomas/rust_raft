@@ -1,9 +1,11 @@
 use raft_codec;
+use raft_proto;
 
 use futures::{future, Future, BoxFuture};
-use tokio_service::Service;
 use std::collections::HashMap;
 use std::io;
+use tokio_proto::TcpServer;
+use tokio_service::Service;
 
 /// Each instance of a raft server should get a unique ID.
 type ServerId = u8;
@@ -12,23 +14,27 @@ type CandidateId = ServerId;
 type Term = u32;
 type LogIndex = u64;
 
+#[derive(Clone,Debug)]
 struct LogEntry {
     term: Term,
     key: String,
     value: String,
 }
 
+#[derive(Clone,Debug)]
 enum ServerState {
     Follower,
     Candidate,
     Leader,
 }
 
+#[derive(Clone,Debug)]
 pub struct Configuration {
     /// Host / IP and port to bind this server on.
-    addr: String,
+    pub addr: String,
 }
 
+#[derive(Clone,Debug)]
 pub struct RaftServer {
     /// The state of this raft instance, initialized as ServerState::Follower
     state: ServerState,
@@ -59,9 +65,25 @@ pub struct RaftServer {
     match_index: Option<HashMap<ServerId, LogIndex>>,
 }
 
+/// Starts the RaftServer based on the configuration set in ::new()
+/// This will block until the server terminates.
+pub fn start(config: Configuration) -> Result<(), String> {
+//    println!("Starting: {:?}", config);
+//    let server = TcpServer::new(raft_proto::RaftProto, config.addr.parse().unwrap());
+//    let raft = RaftServer::new(config.clone());
+//    server.serve(move || {
+//
+//        println!("{:?}", raft);
+//        Ok(raft)
+//    });
+
+    Ok(())
+}
+
 impl RaftServer {
     /// Initializes a RaftServer in the default Follower state
     pub fn new(config: Configuration) -> RaftServer {
+        println!("NEW RAFT");
         RaftServer {
             state: ServerState::Follower,
             config: config,
@@ -75,31 +97,28 @@ impl RaftServer {
             match_index: None,
         }
     }
-
-    /// Starts the RaftServer based on the configuration set in ::new()
-    /// This will block until the server terminates.
-    pub fn start() -> Result<(), String> {
-        
-
-        Ok(())
-    }
-
-
     
-    fn start_election() {
+    fn start_election(&self) {
         // TODO: This is triggered from a timeout causing this server to start al election cycle.
+        println!("Trigger Election");
     }
 
-    fn append_entries() {
+    fn append_entries(&self) {
         // TODO: This is triggered from an AppendEntries RPC to update the log.
+        println!("AppendEntries");
     }
 
-    fn request_vote() {
+    fn request_vote(&self) {
         // TODO: This is triggered from a RequestVote RPC to have the server cast a vote.
+        println!("RequestVote");
     }
 }
 
-impl Service for RaftServer {
+pub struct RaftService {
+    pub server: RaftServer,
+}
+
+impl Service for RaftService {
     type Request = String;
     type Response = String;
 
@@ -107,6 +126,8 @@ impl Service for RaftServer {
     type Future = BoxFuture<Self::Response, Self::Error>;
 
     fn call(&self, req: Self::Request) -> Self::Future {
+        println!("RECIEVED MESSAGE: {:?}", req);
+        self.server.append_entries();
         future::ok(req).boxed()
     }
 }

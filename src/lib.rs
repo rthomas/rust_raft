@@ -1,6 +1,8 @@
-mod raft;
-mod raft_codec;
-mod raft_proto;
+pub mod raft;
+pub mod raft_codec;
+pub mod raft_proto;
+
+pub use raft::*;
 
 extern crate bytes;
 extern crate futures;

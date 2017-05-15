@@ -3,6 +3,14 @@ name = "tokio-raft"
 version = "0.1.0"
 authors = ["Ryan Thomas <ryan@ryant.org>"]
 
+[lib]
+name = "raft"
+path = "src/lib.rs"
+
+[[bin]]
+name = "main"
+src = "src/main.rs"
+
 [dependencies]
 bytes = "0.4"
 
