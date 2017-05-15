@@ -1,4 +1,9 @@
+use raft_codec;
+
+use futures::{future, Future, BoxFuture};
+use tokio_service::Service;
 use std::collections::HashMap;
+use std::io;
 
 /// Each instance of a raft server should get a unique ID.
 type ServerId = u8;
@@ -20,8 +25,8 @@ enum ServerState {
 }
 
 pub struct Configuration {
-    host: String,
-    port: u16,
+    /// Host / IP and port to bind this server on.
+    addr: String,
 }
 
 pub struct RaftServer {
@@ -74,6 +79,34 @@ impl RaftServer {
     /// Starts the RaftServer based on the configuration set in ::new()
     /// This will block until the server terminates.
     pub fn start() -> Result<(), String> {
+        
+
         Ok(())
+    }
+
+
+    
+    fn start_election() {
+        // TODO: This is triggered from a timeout causing this server to start al election cycle.
+    }
+
+    fn append_entries() {
+        // TODO: This is triggered from an AppendEntries RPC to update the log.
+    }
+
+    fn request_vote() {
+        // TODO: This is triggered from a RequestVote RPC to have the server cast a vote.
+    }
+}
+
+impl Service for RaftServer {
+    type Request = String;
+    type Response = String;
+
+    type Error = io::Error;
+    type Future = BoxFuture<Self::Response, Self::Error>;
+
+    fn call(&self, req: Self::Request) -> Self::Future {
+        future::ok(req).boxed()
     }
 }
