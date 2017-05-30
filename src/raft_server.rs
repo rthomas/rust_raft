@@ -1,11 +1,14 @@
-use raft_codec;
-use raft_proto;
 
 use futures::{future, Future, BoxFuture};
 use std::collections::HashMap;
 use std::io;
 use tokio_proto::TcpServer;
 use tokio_service::Service;
+
+
+pub mod append_entries_capnp {
+    include!(concat!(env!("OUT_DIR"), "/schema", "/append_entries_capnp.rs"));
+}
 
 /// Each instance of a raft server should get a unique ID.
 type ServerId = u8;
@@ -83,7 +86,7 @@ pub fn start(config: Configuration) -> Result<(), String> {
 impl RaftServer {
     /// Initializes a RaftServer in the default Follower state
     pub fn new(config: Configuration) -> RaftServer {
-        println!("NEW RAFT");
+        println!("RaftServer::new({:?})", config);
         RaftServer {
             state: ServerState::Follower,
             config: config,

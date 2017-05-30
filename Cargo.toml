@@ -13,8 +13,11 @@ src = "src/main.rs"
 
 [dependencies]
 bytes = "0.4"
-
+capnp = "*"
 futures = "0.1"
 tokio-io = "0.1"
 tokio-proto = "0.1"
 tokio-service = "0.1"
+
+[build-dependencies]
+capnpc = "*"
