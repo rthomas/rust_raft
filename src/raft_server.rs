@@ -1,14 +1,5 @@
-
-use futures::{future, Future, BoxFuture};
 use std::collections::HashMap;
 use std::io;
-use tokio_proto::TcpServer;
-use tokio_service::Service;
-
-
-pub mod append_entries_capnp {
-    include!(concat!(env!("OUT_DIR"), "/schema", "/append_entries_capnp.rs"));
-}
 
 /// Each instance of a raft server should get a unique ID.
 type ServerId = u8;
@@ -114,23 +105,5 @@ impl RaftServer {
     fn request_vote(&self) {
         // TODO: This is triggered from a RequestVote RPC to have the server cast a vote.
         println!("RequestVote");
-    }
-}
-
-pub struct RaftService {
-    pub server: RaftServer,
-}
-
-impl Service for RaftService {
-    type Request = String;
-    type Response = String;
-
-    type Error = io::Error;
-    type Future = BoxFuture<Self::Response, Self::Error>;
-
-    fn call(&self, req: Self::Request) -> Self::Future {
-        println!("RECIEVED MESSAGE: {:?}", req);
-        self.server.append_entries();
-        future::ok(req).boxed()
     }
 }
