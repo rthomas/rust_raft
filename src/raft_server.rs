@@ -1,5 +1,11 @@
 use std::collections::HashMap;
 use std::io;
+use std::sync::Arc;
+
+use iron::prelude::*;
+use iron::{BeforeMiddleware, status};
+use router::Router;
+use iron;
 
 /// Each instance of a raft server should get a unique ID.
 type ServerId = u8;
@@ -59,51 +65,77 @@ pub struct RaftServer {
     match_index: Option<HashMap<ServerId, LogIndex>>,
 }
 
-/// Starts the RaftServer based on the configuration set in ::new()
-/// This will block until the server terminates.
-pub fn start(config: Configuration) -> Result<(), String> {
-//    println!("Starting: {:?}", config);
-//    let server = TcpServer::new(raft_proto::RaftProto, config.addr.parse().unwrap());
-//    let raft = RaftServer::new(config.clone());
-//    server.serve(move || {
-//
-//        println!("{:?}", raft);
-//        Ok(raft)
-//    });
-
-    Ok(())
-}
-
 impl RaftServer {
     /// Initializes a RaftServer in the default Follower state
     pub fn new(config: Configuration) -> RaftServer {
         println!("RaftServer::new({:?})", config);
         RaftServer {
-            state: ServerState::Follower,
-            config: config,
-            current_term: 0,
-            voted_for: None,
-            log: Vec::new(),
-            commit_index: 0,
-            last_applied: 0,
-            // Leader specifics init'd to None due to new creation.
-            next_index: None,
-            match_index: None,
+        state: ServerState::Follower,
+        config: config,
+        current_term: 0,
+        voted_for: None,
+        log: Vec::new(),
+        commit_index: 0,
+        last_applied: 0,
+        // Leader specifics init'd to None due to new creation.
+        next_index: None,
+        match_index: None,
         }
     }
-    
-    fn start_election(&self) {
+
+    fn start_election(&mut self) {
         // TODO: This is triggered from a timeout causing this server to start al election cycle.
         println!("Trigger Election");
     }
 
-    fn append_entries(&self) {
+    fn append_entries(&mut self) {
         // TODO: This is triggered from an AppendEntries RPC to update the log.
         println!("AppendEntries");
     }
 
-    fn request_vote(&self) {
+    fn request_vote(&mut self) {
         // TODO: This is triggered from a RequestVote RPC to have the server cast a vote.
         println!("RequestVote");
     }
 }
+
+//struct ServerRef {}
+//
+//impl iron::typemap::Key for ServerRef {
+//    type Value = Arc<RaftServer>;
+//}
+//
+//
+//impl BeforeMiddleware for RaftServer {
+//    fn before(&self, req: &mut Request) -> IronResult<()> {
+//        req.extensions.insert::<ServerRef>(self);
+//        Ok(())
+//    }
+//}
+
+pub fn start(server: &mut RaftServer) -> Result<(), String> {
+    println!("Starting: {:?}", server);
+
+    let mut server_arc = Arc::new(&mut server);
+
+    let mut router = Router::new();
+//    router.get("/status", status_handler, "status");
+
+    {
+        router.get("/status", move |req: &mut Request| s(req, &mut server_arc.clone()), "status");
+    }
+
+    Iron::new(router).http(server.config.addr.clone()).unwrap();
+    Ok(())
+}
+
+
+fn s(req: &mut Request, server: &mut RaftServer) -> IronResult<Response> {
+    server.append_entries();
+    Ok(Response::with((status::Ok, "OK")))
+}
+
+fn status_handler(req: &mut Request) -> IronResult<Response> {
+    Ok(Response::with((status::Ok, "OK")))
+}
+
