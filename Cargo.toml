@@ -2,6 +2,7 @@
 name = "tokio-raft"
 version = "0.1.0"
 authors = ["Ryan Thomas <ryan@ryant.org>"]
+build = "build.rs"
 
 [lib]
 name = "raft"
@@ -11,6 +12,12 @@ path = "src/lib.rs"
 name = "main"
 src = "src/main.rs"
 
+[build-dependencies]
+capnpc = "*"
+
 [dependencies]
-iron = "*"
-router = "*"
+capnp = "*"
+capnp-rpc = "*"
+futures = "*"
+tokio-core = "*"
+tokio-io = "*"

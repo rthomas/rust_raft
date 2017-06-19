@@ -2,11 +2,6 @@ use std::collections::HashMap;
 use std::io;
 use std::sync::Arc;
 
-use iron::prelude::*;
-use iron::{BeforeMiddleware, status};
-use router::Router;
-use iron;
-
 /// Each instance of a raft server should get a unique ID.
 type ServerId = u8;
 
@@ -99,43 +94,20 @@ impl RaftServer {
     }
 }
 
-//struct ServerRef {}
-//
-//impl iron::typemap::Key for ServerRef {
-//    type Value = Arc<RaftServer>;
-//}
-//
-//
-//impl BeforeMiddleware for RaftServer {
-//    fn before(&self, req: &mut Request) -> IronResult<()> {
-//        req.extensions.insert::<ServerRef>(self);
-//        Ok(())
-//    }
-//}
-
 pub fn start(server: &mut RaftServer) -> Result<(), String> {
     println!("Starting: {:?}", server);
-
-    let mut server_arc = Arc::new(&mut server);
-
-    let mut router = Router::new();
-//    router.get("/status", status_handler, "status");
-
-    {
-        router.get("/status", move |req: &mut Request| s(req, &mut server_arc.clone()), "status");
-    }
-
-    Iron::new(router).http(server.config.addr.clone()).unwrap();
     Ok(())
 }
 
 
-fn s(req: &mut Request, server: &mut RaftServer) -> IronResult<Response> {
-    server.append_entries();
-    Ok(Response::with((status::Ok, "OK")))
-}
+use capnp::capability::Promise;
 
-fn status_handler(req: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, "OK")))
+impl ::raft_capnp::bar::Server for RaftServer {
+    fn baz(&mut self,
+           params: ::raft_capnp::bar::BazParams,
+           mut results: ::raft_capnp::bar::BazResults) -> Promise<(), ::capnp::Error> {
+        println!("GOT A REQ: {}", pry!(params.get()).get_x());
+        results.get().set_y(pry!(params.get()).get_x() + 1);
+        Promise::ok(())
+    }
 }
-
