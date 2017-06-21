@@ -43,8 +43,10 @@ fn server() {
 
     let config = Configuration {addr: args[2].to_string()};
     println!("{:?}", config);
+
+    let raft = raft::rpc::ToClient::new(RaftServer::new(config)).from_server::<::capnp_rpc::Server>();
     
-    let raft = raft::raft_capnp::bar::ToClient::new(RaftServer::new(config)).from_server::<::capnp_rpc::Server>();
+//    let raft = raft::bar::ToClient::new(RaftServer::new(config)).from_server::<::capnp_rpc::Server>();
 
     let done = socket.incoming().for_each(move |(socket, _addr)| {
         try!(socket.set_nodelay(true));
@@ -52,9 +54,8 @@ fn server() {
 
         let handle = handle.clone();
 
-        let network =
-            twoparty::VatNetwork::new(reader, writer,
-                                      rpc_twoparty_capnp::Side::Server, Default::default());
+        let network = twoparty::VatNetwork::new(reader, writer,
+                                                rpc_twoparty_capnp::Side::Server, Default::default());
 
         let rpc_system = RpcSystem::new(Box::new(network), Some(raft.clone().client));
         handle.spawn(rpc_system.map_err(|e| println!("error: {:?}", e)));
@@ -87,24 +88,26 @@ fn client() {
                                            Default::default()));
     let mut rpc_system = RpcSystem::new(network, None);
 
-    let raft: raft::raft_capnp::bar::Client = rpc_system.bootstrap(rpc_twoparty_capnp::Side::Server);
+    let raft: raft::rpc::Client = rpc_system.bootstrap(rpc_twoparty_capnp::Side::Server);
 
     handle.spawn(rpc_system.map_err(|_e| ()));
     
     {
-        println!("Calling RPC");
-        let mut req = raft.baz_request();
-        req.get().set_x(11);
+        println!("Calling AppendEntries");
+        let mut req = raft.append_entries_request();
+
+        req.get().set_term(12345u64);
+        req.get().set_leader_id(1u8);
+        req.get().set_prev_log_index(54321u64);
+        //        req.get().set_entries();
+        req.get().set_leader_commit(9999u64);
 
         core.run(req.send().promise.and_then(|response| {
-            println!("VALUE: {}", pry!(response.get()).get_y());
+            let resp = pry!(response.get());
+            println!("TERM: {}", resp.get_term());
+            println!("SUCC: {}", resp.get_success());
             Promise::ok(())
         })).unwrap()
 
-//        let ret = Box::new(req.send().promise.and_then(|response| {
-//            println!("handler");
-//            Ok(try!(response.get()).get_y())
-//        })).wait().unwrap();
-//        println!("Response: {:?}", ret);
     }
 }

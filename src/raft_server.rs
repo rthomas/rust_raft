@@ -6,7 +6,7 @@ use std::sync::Arc;
 type ServerId = u8;
 
 type CandidateId = ServerId;
-type Term = u32;
+type Term = u64;
 type LogIndex = u64;
 
 #[derive(Clone,Debug)]
@@ -65,16 +65,16 @@ impl RaftServer {
     pub fn new(config: Configuration) -> RaftServer {
         println!("RaftServer::new({:?})", config);
         RaftServer {
-        state: ServerState::Follower,
-        config: config,
-        current_term: 0,
-        voted_for: None,
-        log: Vec::new(),
-        commit_index: 0,
-        last_applied: 0,
-        // Leader specifics init'd to None due to new creation.
-        next_index: None,
-        match_index: None,
+            state: ServerState::Follower,
+            config: config,
+            current_term: 0,
+            voted_for: None,
+            log: Vec::new(),
+            commit_index: 0,
+            last_applied: 0,
+            // Leader specifics init'd to None due to new creation.
+            next_index: None,
+            match_index: None,
         }
     }
 
@@ -83,9 +83,14 @@ impl RaftServer {
         println!("Trigger Election");
     }
 
-    fn append_entries(&mut self) {
-        // TODO: This is triggered from an AppendEntries RPC to update the log.
-        println!("AppendEntries");
+    fn append_entries(&mut self,
+                      term: Term,
+                      leaderId: ServerId,
+                      prevLogIndex: LogIndex,
+                      entries: Vec<LogEntry>,
+                      leaderCommit: LogIndex) -> (Term, bool) {
+        println!("AppendEntries{{{}, {}, {}, {:?}, {}}})", term, leaderId, prevLogIndex, entries, leaderCommit);
+        (12345678u64, false)
     }
 
     fn request_vote(&mut self) {
@@ -102,12 +107,39 @@ pub fn start(server: &mut RaftServer) -> Result<(), String> {
 
 use capnp::capability::Promise;
 
-impl ::raft_capnp::bar::Server for RaftServer {
-    fn baz(&mut self,
-           params: ::raft_capnp::bar::BazParams,
-           mut results: ::raft_capnp::bar::BazResults) -> Promise<(), ::capnp::Error> {
-        println!("GOT A REQ: {}", pry!(params.get()).get_x());
-        results.get().set_y(pry!(params.get()).get_x() + 1);
+impl ::rpc::Server for RaftServer {
+    fn append_entries(&mut self,
+                     params: ::rpc::AppendEntriesParams,
+                     mut results: ::rpc::AppendEntriesResults) -> Promise<(), ::capnp::Error> {
+        let append_entries = pry!(params.get());
+
+        let term = append_entries.get_term();
+        let leader_id = append_entries.get_leader_id();
+        let prev_log_index = append_entries.get_prev_log_index();
+        let leader_commit = append_entries.get_leader_commit();
+        let entries = {
+            let e = match append_entries.get_entries() {
+                Ok(r) => r,
+                Err(e) => panic!(e),
+            };
+            let size = e.len();
+            let mut entries = Vec::with_capacity(size as usize);
+            fn to_log_entry(e: ::log_entry::Reader) -> LogEntry {
+                LogEntry{term: e.get_term(),
+                         key: e.get_key().expect("").to_string(),
+                         value: e.get_value().expect("").to_string()}
+            }
+            for i in 0..size {
+                entries.push(to_log_entry(e.get(i)));
+            }
+            entries
+        };
+
+        let (term, success) = self.append_entries(term, leader_id, prev_log_index, entries, leader_commit);
+        
+        results.get().set_term(term);
+        results.get().set_success(success);
+        
         Promise::ok(())
     }
 }
