@@ -15,13 +15,13 @@ Components:
 
 Plan:
 
-- Initial framework
- - Determine RPC process and log representation
-  - Capnproto?
- - Leader election & timeout
-  - Simple key-value log in-memory
+- capnp-rpc seems to work well
+- Need to:
+ - Flesh out the RPCs into actually doing something
+ - Build up a client lib for making the calls - this will then be what
+   does the location of the current master (i.e. redirects).
+ - Snapshotting
+  - The capnp LogEntry items will be easy to persist to disk... however
+    they're not currently stored as that in the RaftServer so that snapshotting
+    will need to convert them to the proto format before streaming them out.
 
-- Configuration changes
-
-- Snapshotting
- - Disk persistance
