@@ -98,8 +98,9 @@ fn client() {
 
         req.get().set_term(12345u64);
         req.get().set_leader_id(1u8);
-        req.get().set_prev_log_index(54321u64);
+        req.get().set_prev_log_index(0u64);
         //        req.get().set_entries();
+        req.get().set_prev_log_term(1);
         req.get().set_leader_commit(9999u64);
 
         core.run(req.send().promise.and_then(|response| {

@@ -102,15 +102,18 @@ impl RaftServer {
             return (self.current_term, false)
         }
 
-        if prev_log_index < (self.log.len() as u64)  && self.log[prev_log_index as usize].term != prev_log_term {
+        if prev_log_index < (self.log.len() as u64) && self.log[prev_log_index as usize].term != prev_log_term {
             return (self.current_term, false)
         }
-        else if prev_log_index >= (self.log.len() as u64) {
-            println!("Recieved prevLogIndex >= actual log length.");
+        else if prev_log_index != 0 && prev_log_index >= (self.log.len() as u64) {
+            println!("Recieved prevLogIndex >= actual log length. {} >= {}", prev_log_index, self.log.len() as u64);
             return (self.current_term, false)
         }
 
-        let new_index = prev_log_index + 1;
+        let new_index = match prev_log_index {
+            0 => 0,
+            i => i + 1,
+        };
 
         // new_index should be the next item in the log
         // This means it should be equal to the length - otherwise we need to discard all further entries.
@@ -127,7 +130,10 @@ impl RaftServer {
         }
 
         if leader_commit > self.commit_index {
-            let last_index = self.log.len() as u64 - 1;
+            let last_index = match self.log.len() as u64 {
+                0 => 0,
+                i => i - 1,
+            };
             self.commit_index = cmp::min(leader_commit, last_index);
         }
         
@@ -183,6 +189,8 @@ impl rpc::Server for RaftServer {
         };
 
         let (term, success) = self.append_entries(term, leader_id, prev_log_index, prev_log_term, &mut entries, leader_commit);
+
+        println!("DONE... {:?}", self);
         
         results.get().set_term(term);
         results.get().set_success(success);
