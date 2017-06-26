@@ -10,6 +10,7 @@ interface Rpc {
     appendEntries @0 (term :UInt64,
                       leaderId :UInt8,
                       prevLogIndex :UInt64,
+                      prevLogTerm :UInt64,
                       entries :List(LogEntry),
                       leaderCommit :UInt64)
                       -> (term :UInt64, success :Bool);

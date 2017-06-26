@@ -92,9 +92,23 @@ impl RaftServer {
                       term: Term,
                       leaderId: ServerId,
                       prevLogIndex: LogIndex,
+                      prevLogTerm: LogIndex,
                       entries: Vec<LogEntry>,
                       leaderCommit: LogIndex) -> (Term, bool) {
-        println!("AppendEntries{{{}, {}, {}, {:?}, {}}})", term, leaderId, prevLogIndex, entries, leaderCommit);
+        println!("AppendEntries{{{}, {}, {}, {}, {:?}, {}}})", term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
+
+        if term < self.current_term {
+            return (self.current_term, false)
+        }
+
+        if prevLogIndex < (self.log.len() as u64)  && self.log[prevLogIndex as usize].term != prevLogTerm {
+            return (self.current_term, false)
+        }
+        else if prevLogIndex >= (self.log.len() as u64) {
+            println!("Recieved prevLogIndex >= actual log length.");
+            return (self.current_term, false)
+        }
+        
         (12345678u64, false)
     }
 
@@ -131,6 +145,7 @@ impl rpc::Server for RaftServer {
         let term = append_entries.get_term();
         let leader_id = append_entries.get_leader_id();
         let prev_log_index = append_entries.get_prev_log_index();
+        let prev_log_term = append_entries.get_prev_log_term();
         let leader_commit = append_entries.get_leader_commit();
         let entries = {
             let e = match append_entries.get_entries() {
@@ -145,7 +160,7 @@ impl rpc::Server for RaftServer {
             entries
         };
 
-        let (term, success) = self.append_entries(term, leader_id, prev_log_index, entries, leader_commit);
+        let (term, success) = self.append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit);
         
         results.get().set_term(term);
         results.get().set_success(success);
