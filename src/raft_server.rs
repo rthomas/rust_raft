@@ -2,6 +2,11 @@ use std::collections::HashMap;
 use std::io;
 use std::sync::Arc;
 
+use capnp;
+use capnp::capability::Promise;
+use ::rpc;
+
+
 /// Each instance of a raft server should get a unique ID.
 type ServerId = u8;
 
@@ -104,13 +109,23 @@ pub fn start(server: &mut RaftServer) -> Result<(), String> {
     Ok(())
 }
 
+fn to_log_entry(e: ::log_entry::Reader) -> LogEntry {
+    LogEntry{term: e.get_term(),
+             key: match e.get_key() {
+                 Ok(s) => s.to_string(),
+                 Err(_) => "".to_string(),
+             },
+             value: match e.get_value() {
+                 Ok(s) => s.to_string(),
+                 Err(_) => "".to_string(),
+             }
+    }
+}
 
-use capnp::capability::Promise;
-
-impl ::rpc::Server for RaftServer {
+impl rpc::Server for RaftServer {
     fn append_entries(&mut self,
-                     params: ::rpc::AppendEntriesParams,
-                     mut results: ::rpc::AppendEntriesResults) -> Promise<(), ::capnp::Error> {
+                     params: rpc::AppendEntriesParams,
+                     mut results: rpc::AppendEntriesResults) -> Promise<(), capnp::Error> {
         let append_entries = pry!(params.get());
 
         let term = append_entries.get_term();
@@ -124,11 +139,6 @@ impl ::rpc::Server for RaftServer {
             };
             let size = e.len();
             let mut entries = Vec::with_capacity(size as usize);
-            fn to_log_entry(e: ::log_entry::Reader) -> LogEntry {
-                LogEntry{term: e.get_term(),
-                         key: e.get_key().expect("").to_string(),
-                         value: e.get_value().expect("").to_string()}
-            }
             for i in 0..size {
                 entries.push(to_log_entry(e.get(i)));
             }
