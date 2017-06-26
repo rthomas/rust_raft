@@ -90,24 +90,26 @@ impl RaftServer {
 
     fn append_entries(&mut self,
                       term: Term,
-                      leaderId: ServerId,
-                      prevLogIndex: LogIndex,
-                      prevLogTerm: LogIndex,
+                      leader_id: ServerId,
+                      prev_log_index: LogIndex,
+                      prev_log_term: LogIndex,
                       entries: Vec<LogEntry>,
-                      leaderCommit: LogIndex) -> (Term, bool) {
-        println!("AppendEntries{{{}, {}, {}, {}, {:?}, {}}})", term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
+                      leader_commit: LogIndex) -> (Term, bool) {
+        println!("AppendEntries{{{}, {}, {}, {}, {:?}, {}}})", term, leader_id, prev_log_index, prev_log_term, entries, leader_commit);
 
         if term < self.current_term {
             return (self.current_term, false)
         }
 
-        if prevLogIndex < (self.log.len() as u64)  && self.log[prevLogIndex as usize].term != prevLogTerm {
+        if prev_log_index < (self.log.len() as u64)  && self.log[prev_log_index as usize].term != prev_log_term {
             return (self.current_term, false)
         }
-        else if prevLogIndex >= (self.log.len() as u64) {
+        else if prev_log_index >= (self.log.len() as u64) {
             println!("Recieved prevLogIndex >= actual log length.");
             return (self.current_term, false)
         }
+
+        let new_index = prev_log_index + 1;
         
         (12345678u64, false)
     }
