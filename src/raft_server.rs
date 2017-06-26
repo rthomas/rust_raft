@@ -140,11 +140,24 @@ impl RaftServer {
         (self.current_term, true)
     }
 
-    fn request_vote(&mut self, term: Term, candidate_id: CandidateId, last_log_index: LogIndex, last_log_term: Term) {
+    fn request_vote(&mut self, term: Term, candidate_id: CandidateId, last_log_index: LogIndex, last_log_term: Term) -> (Term, bool) {
+        // Do not vote as the term is less than ours.
         if term < self.current_term {
             return (self.current_term, false);
         }
-        
+
+        // Do not vote as we have already voted for someone else.
+        if self.voted_for.is_some() && self.voted_for.unwrap() != candidate_id {
+            return (self.current_term, false);
+        }
+
+        if last_log_index < self.log.len() as u64 && self.log[last_log_index as usize].term == last_log_term {
+            // The candidate is at least as up to date as we are, so we can vote for them
+            self.voted_for = Some(candidate_id);
+            return (self.current_term, true);
+        }
+
+        return (self.current_term, false);
     }
 }
 
