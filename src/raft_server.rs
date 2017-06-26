@@ -93,7 +93,7 @@ impl RaftServer {
                       term: Term,
                       leader_id: ServerId,
                       prev_log_index: LogIndex,
-                      prev_log_term: LogIndex,
+                      prev_log_term: Term,
                       entries: &mut Vec<LogEntry>,
                       leader_commit: LogIndex) -> (Term, bool) {
         println!("AppendEntries{{{}, {}, {}, {}, {:?}, {}}})", term, leader_id, prev_log_index, prev_log_term, entries, leader_commit);
@@ -140,9 +140,11 @@ impl RaftServer {
         (self.current_term, true)
     }
 
-    fn request_vote(&mut self) {
-        // TODO: This is triggered from a RequestVote RPC to have the server cast a vote.
-        println!("RequestVote");
+    fn request_vote(&mut self, term: Term, candidate_id: CandidateId, last_log_index: LogIndex, last_log_term: Term) {
+        if term < self.current_term {
+            return (self.current_term, false);
+        }
+        
     }
 }
 
