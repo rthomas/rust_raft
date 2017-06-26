@@ -1,3 +1,4 @@
+use std::cmp;
 use std::collections::HashMap;
 use std::io;
 use std::sync::Arc;
@@ -93,7 +94,7 @@ impl RaftServer {
                       leader_id: ServerId,
                       prev_log_index: LogIndex,
                       prev_log_term: LogIndex,
-                      entries: Vec<LogEntry>,
+                      entries: &mut Vec<LogEntry>,
                       leader_commit: LogIndex) -> (Term, bool) {
         println!("AppendEntries{{{}, {}, {}, {}, {:?}, {}}})", term, leader_id, prev_log_index, prev_log_term, entries, leader_commit);
 
@@ -110,8 +111,27 @@ impl RaftServer {
         }
 
         let new_index = prev_log_index + 1;
+
+        // new_index should be the next item in the log
+        // This means it should be equal to the length - otherwise we need to discard all further entries.
+        if (self.log.len() as u64) == new_index {
+            self.log.append(entries);
+        }
+        else if (self.log.len() as u64) > new_index {
+            // Discard all items from new_index after
+            self.log.split_off(new_index as usize);
+            self.log.append(entries);
+        }
+        else {
+            panic!("Unknown state. new_index: {}, log length: {}", new_index, self.log.len());
+        }
+
+        if leader_commit > self.commit_index {
+            let last_index = self.log.len() as u64 - 1;
+            self.commit_index = cmp::min(leader_commit, last_index);
+        }
         
-        (12345678u64, false)
+        (self.current_term, true)
     }
 
     fn request_vote(&mut self) {
@@ -149,7 +169,7 @@ impl rpc::Server for RaftServer {
         let prev_log_index = append_entries.get_prev_log_index();
         let prev_log_term = append_entries.get_prev_log_term();
         let leader_commit = append_entries.get_leader_commit();
-        let entries = {
+        let mut entries = {
             let e = match append_entries.get_entries() {
                 Ok(r) => r,
                 Err(e) => panic!(e),
@@ -162,7 +182,7 @@ impl rpc::Server for RaftServer {
             entries
         };
 
-        let (term, success) = self.append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit);
+        let (term, success) = self.append_entries(term, leader_id, prev_log_index, prev_log_term, &mut entries, leader_commit);
         
         results.get().set_term(term);
         results.get().set_success(success);
