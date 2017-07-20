@@ -10,7 +10,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "main"
-src = "src/main.rs"
+path = "src/main.rs"
 
 [build-dependencies]
 capnpc = "*"
