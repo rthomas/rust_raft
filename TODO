@@ -17,6 +17,7 @@ Plan:
 
 - capnp-rpc seems to work well
 - Need to:
+ - Thread for radt server to timeout / make rpcs to other instances
  - Flesh out the RPCs into actually doing something
  - Build up a client lib for making the calls - this will then be what
    does the location of the current master (i.e. redirects).
