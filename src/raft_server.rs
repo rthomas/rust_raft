@@ -1,7 +1,5 @@
 use std::cmp;
 use std::collections::HashMap;
-use std::io;
-use std::sync::Arc;
 
 use capnp;
 use capnp::capability::Promise;
