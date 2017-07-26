@@ -155,7 +155,7 @@ impl RaftServer {
             return (self.current_term, true);
         }
 
-        return (self.current_term, false);
+        (self.current_term, false)
     }
 }
 
