@@ -42,6 +42,9 @@ pub struct RaftServer {
     /// The state of this raft instance, initialized as ServerState::Follower
     state: ServerState,
 
+    /// The `Instant` that the last heartbeat was recieved at.
+    last_heartbeat: time::Instant,
+    
     /// Configuration for the raft cluster
     config: Configuration,
     
@@ -76,6 +79,7 @@ pub struct Raft {
 
 impl Raft {
     pub fn new_server(config: Configuration) -> Raft {
+        let timeout = config.follower_timeout;
         let raft_server = Arc::new(Mutex::new(RaftServer::new(config)));
         let server = raft_server.clone();
         
@@ -85,9 +89,31 @@ impl Raft {
         
         thread::spawn(move || {
             loop {
-                println!("{:?}", server);
-                thread::sleep(time::Duration::from_millis(1000));
-                server.lock().unwrap().state = ServerState::Leader;
+                {
+                    // We need to make sure the lock scope closes before the sleep
+                    // otherwise we never release the lock.
+                    let s = match server.lock() {
+                        Ok(s) => s,
+                        Err(poisoned) => panic!("Poisoned lock"),
+                    };
+                    match s.state {
+                        ServerState::Follower => {
+                            println!("Follower...");
+                            let now = time::Instant::now();
+                            if now.duration_since(s.last_heartbeat) > timeout {
+                                println!("Follower timed out - triggering election!");
+                                // Start election
+                            }
+                            else {
+                                println!("Still following...");
+                            }
+                        }
+                        ref state => {
+                            println!("Other state... {:?}", state);
+                        }
+                    }
+                }
+                thread::sleep(timeout);
             }
         });
         
@@ -101,6 +127,7 @@ impl RaftServer {
         println!("RaftServer::new({:?})", config);
         RaftServer {
             state: ServerState::Follower,
+            last_heartbeat: time::Instant::now(),
             config: config,
             current_term: 0,
             voted_for: None,
@@ -125,8 +152,10 @@ impl RaftServer {
                       prev_log_term: Term,
                       entries: &mut Vec<LogEntry>,
                       leader_commit: LogIndex) -> (Term, bool) {
-        println!("AppendEntries{{{}, {}, {}, {}, {:?}, {}}})", term, leader_id, prev_log_index, prev_log_term, entries, leader_commit);
-
+        println!("AppendEntries{{{}, {}, {}, {}, {:?}, {}}})", term, leader_id, prev_log_index, prev_log_term, entries, leader_commit);        
+        // Naive impl - any append entries counts as a heartbeat.
+        self.last_heartbeat = time::Instant::now();
+        
         if term < self.current_term {
             return (self.current_term, false)
         }
