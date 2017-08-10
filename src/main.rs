@@ -11,7 +11,7 @@ use capnp_rpc::{RpcSystem, twoparty, rpc_twoparty_capnp};
 use futures::{Future, Stream};
 use tokio_io::{AsyncRead};
 
-use raft::{Configuration, RaftServer};
+use raft::{Configuration, Raft};
 
 pub fn main() {
     let args: Vec<String> = ::std::env::args().collect();
@@ -44,9 +44,7 @@ fn server() {
     let config = Configuration {addr: args[2].to_string()};
     println!("{:?}", config);
 
-    let raft = raft::rpc::ToClient::new(RaftServer::new(config)).from_server::<::capnp_rpc::Server>();
-    
-//    let raft = raft::bar::ToClient::new(RaftServer::new(config)).from_server::<::capnp_rpc::Server>();
+    let raft = raft::rpc::ToClient::new(Raft::new_server(config)).from_server::<::capnp_rpc::Server>();
 
     let done = socket.incoming().for_each(move |(socket, _addr)| {
         try!(socket.set_nodelay(true));

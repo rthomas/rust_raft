@@ -1,5 +1,6 @@
 use std::cmp;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use capnp;
 use capnp::capability::Promise;
@@ -62,6 +63,21 @@ pub struct RaftServer {
 
     /// For each server, the index of the highest known replicated log entry.
     match_index: Option<HashMap<ServerId, LogIndex>>,
+}
+
+/// This exists as a thread-safe wrapper to the RaftServer instance.
+#[derive(Debug)]
+pub struct Raft {
+    server: Arc<Mutex<RaftServer>>,
+}
+
+impl Raft {
+    pub fn new_server(config: Configuration) -> Raft {
+        let mut raft_server = RaftServer::new(config);
+        Raft {
+            server: Arc::new(Mutex::new(raft_server)),
+        }
+    }
 }
 
 impl RaftServer {
@@ -177,7 +193,7 @@ fn to_log_entry(e: ::log_entry::Reader) -> LogEntry {
     }
 }
 
-impl rpc::Server for RaftServer {
+impl rpc::Server for Raft {
     fn append_entries(&mut self,
                      params: rpc::AppendEntriesParams,
                      mut results: rpc::AppendEntriesResults) -> Promise<(), capnp::Error> {
@@ -201,7 +217,7 @@ impl rpc::Server for RaftServer {
             entries
         };
 
-        let (term, success) = self.append_entries(term, leader_id, prev_log_index, prev_log_term, &mut entries, leader_commit);
+        let (term, success) = self.server.lock().unwrap().append_entries(term, leader_id, prev_log_index, prev_log_term, &mut entries, leader_commit);
 
         println!("DONE... {:?}", self);
         
