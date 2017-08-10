@@ -34,6 +34,7 @@ enum ServerState {
 pub struct Configuration {
     /// Host / IP and port to bind this server on.
     pub addr: String,
+    pub follower_timeout: time::Duration,
 }
 
 #[derive(Clone,Debug)]

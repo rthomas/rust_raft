@@ -6,6 +6,8 @@ extern crate capnp;
 extern crate capnp_rpc;
 extern crate futures;
 
+use std::time;
+
 use capnp::capability::Promise;
 use capnp_rpc::{RpcSystem, twoparty, rpc_twoparty_capnp};
 use futures::{Future, Stream};
@@ -41,7 +43,7 @@ fn server() {
     let addr = args[2].to_socket_addrs().unwrap().next().expect("could not parse address");
     let socket = ::tokio_core::net::TcpListener::bind(&addr, &handle).unwrap();
 
-    let config = Configuration {addr: args[2].to_string()};
+    let config = Configuration {addr: args[2].to_string(), follower_timeout: time::Duration::from_millis(250)};
     println!("{:?}", config);
 
     let raft = raft::rpc::ToClient::new(Raft::new_server(config)).from_server::<::capnp_rpc::Server>();
