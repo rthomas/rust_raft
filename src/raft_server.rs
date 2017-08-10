@@ -1,6 +1,8 @@
 use std::cmp;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time;
 
 use capnp;
 use capnp::capability::Promise;
@@ -73,10 +75,22 @@ pub struct Raft {
 
 impl Raft {
     pub fn new_server(config: Configuration) -> Raft {
-        let mut raft_server = RaftServer::new(config);
-        Raft {
-            server: Arc::new(Mutex::new(raft_server)),
-        }
+        let raft_server = Arc::new(Mutex::new(RaftServer::new(config)));
+        let server = raft_server.clone();
+        
+        let mut raft = Raft {
+            server: raft_server,
+        };
+        
+        thread::spawn(move || {
+            loop {
+                println!("{:?}", server);
+                thread::sleep(time::Duration::from_millis(1000));
+                server.lock().unwrap().state = ServerState::Leader;
+            }
+        });
+        
+        return raft;
     }
 }
 
