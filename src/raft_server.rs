@@ -109,6 +109,7 @@ impl Raft {
                             }
                         }
                         ref state => {
+                            // TODO - impl other states
                             println!("Other state... {:?}", state);
                         }
                     }
