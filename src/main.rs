@@ -14,6 +14,7 @@ use futures::{Future, Stream};
 use tokio_io::{AsyncRead};
 
 use raft::server::{Configuration, Raft};
+use raft::client::RaftClient;
 
 pub fn main() {
     let args: Vec<String> = ::std::env::args().collect();
@@ -74,41 +75,12 @@ fn client() {
 
     use std::net::ToSocketAddrs;
 
-    let mut core = tokio_core::reactor::Core::new().unwrap();
-    let handle = core.handle();
-
     let addr = args[2].to_socket_addrs().unwrap().next().expect("could not parse address");
-    let stream = core.run(::tokio_core::net::TcpStream::connect(&addr, &handle)).unwrap();
-    stream.set_nodelay(true);
-    let (reader, writer) = stream.split();
 
-    let network =
-        Box::new(twoparty::VatNetwork::new(reader, writer,
-                                           rpc_twoparty_capnp::Side::Client,
-                                           Default::default()));
-    let mut rpc_system = RpcSystem::new(network, None);
 
-    let raft: raft::rpc::Client = rpc_system.bootstrap(rpc_twoparty_capnp::Side::Server);
+    let mut client = RaftClient::new(addr).unwrap();
+    let entries: Vec<raft::server::LogEntry> = Vec::new();
+    let (term, success) = client.append_entries(12345u64, 1u8, 0u64, 1, &entries, 999u64).unwrap();
 
-    handle.spawn(rpc_system.map_err(|_e| ()));
-    
-    {
-        println!("Calling AppendEntries");
-        let mut req = raft.append_entries_request();
-
-        req.get().set_term(12345u64);
-        req.get().set_leader_id(1u8);
-        req.get().set_prev_log_index(0u64);
-        //        req.get().set_entries();
-        req.get().set_prev_log_term(1);
-        req.get().set_leader_commit(9999u64);
-
-        core.run(req.send().promise.and_then(|response| {
-            let resp = pry!(response.get());
-            println!("TERM: {}", resp.get_term());
-            println!("SUCC: {}", resp.get_success());
-            Promise::ok(())
-        })).unwrap()
-
-    }
+    println!("Term: {:?}, Success: {}", term, success);
 }
