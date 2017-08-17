@@ -25,7 +25,7 @@ impl RaftClient {
     /// all_nodes vector. If this is empty, or they also all time out, then the method will fail.
     ///
     /// This means that in the initial state, a valid node must be passed in so that the client can discover the leader.
-    fn update_nodes(&mut self) {
-
+    fn update_nodes(&mut self) -> Result<(), String> {
+        Ok(())
     }
 }
