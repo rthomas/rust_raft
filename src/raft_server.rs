@@ -10,14 +10,14 @@ use ::rpc;
 
 
 /// Each instance of a raft server should get a unique ID.
-type ServerId = u8;
+pub type ServerId = u8;
 
-type CandidateId = ServerId;
-type Term = u64;
-type LogIndex = u64;
+pub type CandidateId = ServerId;
+pub type Term = u64;
+pub type LogIndex = u64;
 
 #[derive(Clone,Debug)]
-struct LogEntry {
+pub struct LogEntry {
     term: Term,
     key: String,
     value: String,
