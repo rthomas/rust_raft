@@ -81,6 +81,7 @@ fn client() {
     let mut client = RaftClient::new(addr).unwrap();
     let entries: Vec<raft::server::LogEntry> = Vec::new();
     let (term, success) = client.append_entries(12345u64, 1u8, 0u64, 1, &entries, 999u64).unwrap();
-
+    println!("Term: {:?}, Success: {}", term, success);
+    let (term, success) = client.append_entries(12345u64, 1u8, 0u64, 1, &entries, 999u64).unwrap();
     println!("Term: {:?}, Success: {}", term, success);
 }
