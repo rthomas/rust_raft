@@ -13,7 +13,7 @@ use capnp_rpc::{RpcSystem, twoparty, rpc_twoparty_capnp};
 use futures::{Future, Stream};
 use tokio_io::{AsyncRead};
 
-use raft::{Configuration, Raft};
+use raft::server::{Configuration, Raft};
 
 pub fn main() {
     let args: Vec<String> = ::std::env::args().collect();
