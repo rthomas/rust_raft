@@ -263,6 +263,8 @@ impl rpc::Server for Raft {
         
         results.get().set_term(term);
         results.get().set_success(success);
+
+        // TODO - populate node metadata in the results.
         
         Promise::ok(())
     }
