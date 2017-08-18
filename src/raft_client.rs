@@ -65,6 +65,7 @@ impl RaftClient {
     }
 
     fn open_connection(&mut self) -> Result<rpc::Client, Error> {
+        self.update_nodes()?;
         let handle = self.rpc_core.handle();
         let stream = self.rpc_core.run(TcpStream::connect(&self.last_known_leader.unwrap(), &handle))?;
         stream.set_nodelay(true);
@@ -76,7 +77,7 @@ impl RaftClient {
         let client: rpc::Client = rpc_system.bootstrap(rpc_twoparty_capnp::Side::Server);
 
         handle.spawn(rpc_system.map_err(|e| {
-            panic!("{:?}", e);
+            panic!("RPC System Error: {:?}", e);
         }));
 
         Ok(client)
