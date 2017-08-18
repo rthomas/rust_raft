@@ -220,11 +220,6 @@ impl RaftServer {
     }
 }
 
-pub fn start(server: &mut RaftServer) -> Result<(), String> {
-    println!("Starting: {:?}", server);
-    Ok(())
-}
-
 fn to_log_entry(e: ::log_entry::Reader) -> LogEntry {
     LogEntry{term: e.get_term(),
              key: match e.get_key() {
