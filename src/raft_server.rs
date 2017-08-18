@@ -257,8 +257,16 @@ impl rpc::Server for Raft {
             entries
         };
 
-        let (term, success) = self.server.lock().unwrap().append_entries(term, leader_id, prev_log_index, prev_log_term, &mut entries, leader_commit);
-
+        let (term, success) = match self.server.lock() {
+            Ok(mut s) => {
+                s.append_entries(term, leader_id, prev_log_index, prev_log_term, &mut entries, leader_commit)
+            },
+            Err(e) => {
+                // TODO - better handling...
+                panic!("Error locking server {:?}", e);
+            },
+        };
+        
         println!("DONE... {:?}", self);
         
         results.get().set_term(term);
