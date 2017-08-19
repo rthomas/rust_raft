@@ -235,8 +235,8 @@ fn to_log_entry(e: ::log_entry::Reader) -> LogEntry {
 
 impl rpc::Server for Raft {
     fn append_entries(&mut self,
-                     params: rpc::AppendEntriesParams,
-                     mut results: rpc::AppendEntriesResults) -> Promise<(), capnp::Error> {
+                      params: rpc::AppendEntriesParams,
+                      mut results: rpc::AppendEntriesResults) -> Promise<(), capnp::Error> {
         let append_entries = pry!(params.get());
 
         let term = append_entries.get_term();
