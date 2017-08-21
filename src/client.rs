@@ -9,7 +9,7 @@ use tokio_core::net::TcpStream;
 use tokio_io::AsyncRead;
 
 use server;
-use ::rpc;
+use rpc;
 
 pub struct RaftClient {
     last_known_leader: Option<SocketAddr>,
@@ -64,7 +64,7 @@ impl RaftClient {
         }
     }
 
-    fn open_connection(&mut self) -> Result<rpc::Client, Error> {
+    fn open_connection(&mut self) -> Result<rpc::raft::Client, Error> {
         self.update_nodes()?;
         let handle = self.rpc_core.handle();
         let stream = self.rpc_core.run(TcpStream::connect(&self.last_known_leader.unwrap(), &handle))?;
@@ -74,7 +74,7 @@ impl RaftClient {
                                                          rpc_twoparty_capnp::Side::Client,
                                                          Default::default()));
         let mut rpc_system = RpcSystem::new(network, None);
-        let client: rpc::Client = rpc_system.bootstrap(rpc_twoparty_capnp::Side::Server);
+        let client: rpc::raft::Client = rpc_system.bootstrap(rpc_twoparty_capnp::Side::Server);
 
         handle.spawn(rpc_system.map_err(|e| {
             panic!("RPC System Error: {:?}", e);

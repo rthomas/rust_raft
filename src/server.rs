@@ -6,7 +6,8 @@ use std::time;
 
 use capnp;
 use capnp::capability::Promise;
-use ::rpc;
+
+use rpc;
 
 
 /// Each instance of a raft server should get a unique ID.
@@ -220,7 +221,7 @@ impl RaftServer {
     }
 }
 
-fn to_log_entry(e: ::log_entry::Reader) -> LogEntry {
+fn to_log_entry(e: rpc::log_entry::Reader) -> LogEntry {
     LogEntry{term: e.get_term(),
              key: match e.get_key() {
                  Ok(s) => s.to_string(),
@@ -233,10 +234,10 @@ fn to_log_entry(e: ::log_entry::Reader) -> LogEntry {
     }
 }
 
-impl rpc::Server for Raft {
+impl rpc::raft::Server for Raft {
     fn append_entries(&mut self,
-                      params: rpc::AppendEntriesParams,
-                      mut results: rpc::AppendEntriesResults) -> Promise<(), capnp::Error> {
+                      params: rpc::raft::AppendEntriesParams,
+                      mut results: rpc::raft::AppendEntriesResults) -> Promise<(), capnp::Error> {
         let append_entries = pry!(params.get());
 
         let term = append_entries.get_term();

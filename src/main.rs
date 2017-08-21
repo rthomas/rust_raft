@@ -47,7 +47,7 @@ fn server() {
     let config = Configuration {addr: args[2].to_string(), follower_timeout: time::Duration::from_millis(250)};
     println!("{:?}", config);
 
-    let raft = raft::rpc::ToClient::new(Raft::new_server(config)).from_server::<::capnp_rpc::Server>();
+    let raft = raft::rpc::raft::ToClient::new(Raft::new_server(config)).from_server::<::capnp_rpc::Server>();
 
     let done = socket.incoming().for_each(move |(socket, _addr)| {
         try!(socket.set_nodelay(true));

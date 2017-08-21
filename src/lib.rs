@@ -8,8 +8,8 @@ extern crate tokio_io;
 pub mod server;
 pub mod client;
 
-mod raft_capnp {
+pub mod raft_capnp {
     include!(concat!(env!("OUT_DIR"), "/schema/raft_capnp.rs"));
 }
 
-pub use raft_capnp::*;
+pub use raft_capnp as rpc;

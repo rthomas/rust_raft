@@ -1,4 +1,4 @@
-@0xa7ed6c5c8a98ca40;
+@0x969abc084e5aa2b6;
 
 struct NodeInfo {
     leader @0 :Text;
@@ -11,7 +11,7 @@ struct LogEntry {
     value @2 :Text;
 }
 
-interface Rpc {
+interface Raft {
     appendEntries @0 (term :UInt64,
                       leaderId :UInt8,
                       prevLogIndex :UInt64,
