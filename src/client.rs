@@ -8,7 +8,7 @@ use tokio_core::reactor::Core;
 use tokio_core::net::TcpStream;
 use tokio_io::AsyncRead;
 
-use raft_server as server;
+use server;
 use ::rpc;
 
 pub struct RaftClient {
